@@ -1,3 +1,4 @@
+import csv
 import time
 
 import neat
@@ -6,6 +7,8 @@ import os
 import random
 import math
 import sys
+
+from pygame.pixelarray import PixelArray
 
 pygame.init()
 
@@ -34,6 +37,16 @@ BG = pygame.image.load(os.path.join("Assets/Other", "Track.png"))
 
 FONTE = pygame.font.Font('freesansbold.ttf', 20)
 
+CORES: dict = {
+    "vermelho": (169, 1, 1),
+    "azul": (0, 80, 184),
+    "amarelo": (235, 160, 0),
+    "verde": (77, 158, 7),
+    "cinza": (83, 83, 83),
+    "roxo": (89, 0, 184),
+    "rosa": (159, 0, 138)
+}
+
 
 class Dino:
     X_POS = 80
@@ -46,7 +59,8 @@ class Dino:
         self.dino_pula = False
         self.pulo_vel = self.ALTURA_PULO
         self.rect = pygame.Rect(self.X_POS, self.Y_POS, img.get_width(), img.get_height())
-        self.cor = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        self.i: int = 0
+        self.cor = sorted(CORES.values())[random.randint(0, 6)]
         self.tempo: float = 0.0
         self.tempos: list = []
         self.dt: float = 0.04
@@ -84,13 +98,17 @@ class Dino:
     def draw(self, TELA):
         TELA.blit(self.imagem, (self.rect.x, self.rect.y))
         pygame.draw.rect(TELA, self.cor, (self.rect.x, self.rect.y, self.rect.width, self.rect.height), 2)
+        arr = PixelArray(self.imagem)
+        arr.replace((83, 83, 83), self.cor)
+        arr.close()
         for obstaculo in obstaculos:
             pygame.draw.line(TELA, self.cor, (self.rect.x + 54, self.rect.y + 12), obstaculo.rect.center, 2)
 
 
 class Obstaculos:
-    def __init__(self, imagem, numero_de_imgs):
+    def __init__(self, imagem, numero_de_imgs, cor=(83, 83, 83)):
         self.imagem = imagem
+        self.cor = cor
         self.type = numero_de_imgs
         self.rect = self.imagem[self.type].get_rect()
         self.rect.x = ALTURA_TELA + 700
@@ -102,17 +120,21 @@ class Obstaculos:
 
     def draw(self, TELA):
         TELA.blit(self.imagem[self.type], self.rect)
+        for img in self.imagem:
+            arr = PixelArray(img)
+            arr.replace((83, 83, 83), self.cor)
+            arr.close()
 
 
 class PeqCacto(Obstaculos):
-    def __init__(self, imagem, numero_de_cactos):
-        super().__init__(imagem, numero_de_imgs=numero_de_cactos)
+    def __init__(self, imagem, numero_de_cactos, cor):
+        super().__init__(imagem, numero_de_imgs=numero_de_cactos, cor=cor)
         self.rect.y = 325
 
 
 class GrdCacto(Obstaculos):
-    def __init__(self, imagem, numero_de_cactos):
-        super().__init__(imagem, numero_de_imgs=numero_de_cactos)
+    def __init__(self, imagem, numero_de_cactos, cor):
+        super().__init__(imagem, numero_de_imgs=numero_de_cactos, cor=cor)
         self.rect.y = 300
 
 
@@ -172,6 +194,24 @@ def define_max_score(pontos: int, geracao: int) -> int:
     return pontuacao_max
 
 
+def escrever_no_arquivo(dados: list) -> None:
+    cabecalho = ['Pontuação máxima', 'Geração']
+    if os.path.isfile('data/dados.csv'):
+        with open('data/dados.csv', 'r', encoding='UTF8', newline='') as fl:
+            reader = csv.DictReader(fl)
+            with open('data/dados.csv', 'a', encoding='UTF8', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=cabecalho)
+                print(f'cabeçalho: {reader.fieldnames}')
+                if reader.fieldnames != cabecalho:
+                    writer.writeheader()
+                writer.writerows(dados)
+    else:
+        with open('data/dados.csv', 'w', encoding='UTF8', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=cabecalho)
+            writer.writeheader()
+            writer.writerows(dados)
+
+
 def eval_genomes(genomes, config):
     global game_speed, x_pos_bg, y_pos_bg, obstaculos, dinos, ge, nets, pontos
     clock = pygame.time.Clock()
@@ -227,6 +267,8 @@ def eval_genomes(genomes, config):
 
     run = True
     while run:
+        dados = []
+        linha = {}
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -239,14 +281,19 @@ def eval_genomes(genomes, config):
             dino.draw(TELA)
 
         if len(dinos) == 0:
+            geracao = pop.generation
+            linha["Pontuação máxima"] = pontos
+            linha["Geração"] = geracao
+            dados.append(linha)
+            escrever_no_arquivo(dados)
             break
 
         if len(obstaculos) == 0:
             rand_int = random.randint(0, 2)
             if rand_int == 0:
-                obstaculos.append(PeqCacto(CACTO_PEQ, random.randint(0, 2)))
+                obstaculos.append(PeqCacto(CACTO_PEQ, random.randint(0, 2), (6, 165, 54)))
             elif rand_int == 1:
-                obstaculos.append(GrdCacto(CACTO_GRD, random.randint(0, 2)))
+                obstaculos.append(GrdCacto(CACTO_GRD, random.randint(0, 2), (6, 165, 54)))
             elif rand_int == 2:
                 obstaculos.append(Ptero(random.randint(0, 150)))
 
@@ -269,7 +316,9 @@ def eval_genomes(genomes, config):
                                        dino.rect.x - obstaculo.rect.x,
                                        distancia((dino.rect.x, dino.rect.y),
                                                  obstaculo.rect.midtop),
-                                       angulo((dino.rect.y - obstaculo.rect.y), distancia((dino.rect.x, dino.rect.y), obstaculo.rect.midtop))))
+                                       angulo((dino.rect.y - obstaculo.rect.y),
+                                              distancia((dino.rect.x, dino.rect.y), obstaculo.rect.midtop)),
+                                       game_speed))
             # print(output[0])
             if output[0] > 0.0 and dino.rect.y == dino.Y_POS:
                 dino.dino_pula = True
@@ -284,6 +333,8 @@ def eval_genomes(genomes, config):
         background()
         clock.tick(30)
         pygame.display.update()
+
+
 # END main loop
 
 
