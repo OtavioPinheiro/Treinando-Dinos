@@ -17,6 +17,23 @@ def obter_dados(caminho_dos_dados: str) -> tuple:
     return pontuacoes, geracoes
 
 
+def tratar_os_dados(caminho_dos_dados: str) -> tuple:
+    dados = obter_dados(caminho_dos_dados)
+    dados_pontuacoes: list = dados[0]
+    pontuacoes: list = []
+    for ponto in dados_pontuacoes:
+        ponto = int(ponto)
+        pontuacoes.append(ponto)
+
+    dados_geracoes: list = dados[1]
+    geracoes: list = []
+    for geracao in dados_geracoes:
+        geracao = int(geracao)
+        geracoes.append(geracao)
+
+    return pontuacoes, geracoes
+
+
 def gerar_histograma(caminho_dos_dados: str) -> None:
     dados = obter_dados(caminho_dos_dados)
     pontuacoes: list = dados[0]
@@ -29,11 +46,12 @@ def gerar_histograma(caminho_dos_dados: str) -> None:
 
 
 def gerar_grafico_de_barras(caminho_dos_dados: str) -> None:
-    dados = obter_dados(caminho_dos_dados)
-    pontuacoes: list = dados[0]
-    geracoes: list = dados[1]
+    dados = tratar_os_dados(caminho_dos_dados)
+    pontuacoes = dados[0]
+    geracoes = dados[1]
+
     plt.figure(figsize=(40, 15))
-    plt.bar(x=geracoes, height=pontuacoes, align='edge', width=1.0, bottom=-1, color="green", edgecolor='black')
+    plt.bar(x=geracoes, height=pontuacoes, align='edge', width=0.7, bottom=0, color="green", edgecolor='black')
     # for i in range(len(geracoes)):
     #     plt.annotate(pontuacoes[i], (i - 0.5, int(pontuacoes[i]) + 500))
     plt.xlabel('Gerações')
@@ -44,5 +62,30 @@ def gerar_grafico_de_barras(caminho_dos_dados: str) -> None:
     plt.show()
 
 
+def gerar_grafico_de_linha(caminho_dos_dados: str) -> None:
+    dados = tratar_os_dados(caminho_dos_dados)
+    pontuacoes = dados[0]
+    geracoes = dados[1]
+
+    plt.figure(figsize=(40, 15))
+    plt.plot(geracoes, pontuacoes)
+    plt.xlabel('Gerações')
+    plt.ylabel('Pontuações')
+    plt.title('Pontuações x Gerações')
+    plt.tight_layout()
+    plt.savefig('graphics/linhas.png', bbox_inches='tight')
+    plt.show()
+
+
+def gerar_grafico_linha_sns(caminho_dos_dados: str) -> None:
+    dados = tratar_os_dados(caminho_dos_dados)
+    pontuacoes = dados[0]
+    geracoes = dados[1]
+    ax = sns.relplot(x=geracoes, y=pontuacoes, kind="line")
+    ax.set(xlabel='Gerações', ylabel='Pontuações', title='Gerações x Pontuações')
+    plt.savefig('graphics/linhas_sns.png', dpi=400)
+    plt.show()
+
+
 if __name__ == "__main__":
-    gerar_grafico_de_barras('data/dados.csv')
+    gerar_grafico_linha_sns('data/dados.csv')
