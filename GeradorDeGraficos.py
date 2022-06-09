@@ -84,7 +84,7 @@ def gerar_grafico_de_linha(caminho_dos_dados: str) -> None:
     plt.show()
 
 
-def gerar_grafico_linha_sns(caminho_dos_dados: str) -> None:
+def gerar_grafico_de_linha_sns(caminho_dos_dados: str) -> None:
     dados = tratar_os_dados(caminho_dos_dados)
     pontuacoes = dados[0]
     geracoes = dados[1]
@@ -95,5 +95,16 @@ def gerar_grafico_linha_sns(caminho_dos_dados: str) -> None:
     plt.show()
 
 
+def gerar_grafico_de_barras_sns(caminho_dos_dados: str) -> None:
+    dados = tratar_os_dados(caminho_dos_dados)
+    potuacoes = dados[0]
+    geracoes = dados[1]
+    ax = sns.barplot(x=geracoes, y=potuacoes, color="blue")
+    ax.set(xlabel='Gerações', ylabel='Pontuações', title='Gerações x Pontuações')
+    plt.gcf().set_size_inches(15, 15)
+    plt.savefig(f'graphics/barras_sns_{sufixo}.png', dpi=400)
+    plt.show()
+
+
 if __name__ == "__main__":
-    gerar_grafico_linha_sns('data/dados_2022-06-09_10_22_9.csv')
+    gerar_grafico_de_barras_sns('data/dados_2022-06-09_12_49_12.csv')

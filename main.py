@@ -374,4 +374,4 @@ if __name__ == "__main__":
             pass
     finally:
         caminhos_dos_dados = escrever_no_arquivo(DADOS)
-        GeradorDeGraficos.gerar_grafico_linha_sns(caminhos_dos_dados)
+        GeradorDeGraficos.gerar_grafico_de_linha_sns(caminhos_dos_dados)
