@@ -7,8 +7,11 @@ import os
 import random
 import math
 import sys
+import datetime
 
 from pygame.pixelarray import PixelArray
+
+import GeradorDeGraficos
 
 pygame.init()
 
@@ -47,6 +50,8 @@ CORES: dict = {
     "rosa": (159, 0, 138)
 }
 
+DADOS = []
+
 
 class Dino:
     X_POS = 80
@@ -61,19 +66,12 @@ class Dino:
         self.rect = pygame.Rect(self.X_POS, self.Y_POS, img.get_width(), img.get_height())
         self.i: int = 0
         self.cor = sorted(CORES.values())[random.randint(0, 6)]
-        self.tempo: float = 0.0
-        self.tempos: list = []
-        self.dt: float = 0.04
         self.step_index = 0
 
     def update(self):
         if self.dino_corre:
             self.corre()
         if self.dino_pula:
-            self.tempo = time.time()
-            self.tempos.append(self.tempo)
-            if len(self.tempos) >= 2:
-                self.dt = self.tempos[-1] - self.tempos[-2]
             self.pula()
         if self.step_index >= 10:
             self.step_index = 0
@@ -86,7 +84,6 @@ class Dino:
         if self.pulo_vel <= -self.ALTURA_PULO:
             self.dino_pula = False
             self.dino_corre = True
-
             self.pulo_vel = self.ALTURA_PULO
 
     def corre(self):
@@ -194,22 +191,30 @@ def define_max_score(pontos: int, geracao: int) -> int:
     return pontuacao_max
 
 
-def escrever_no_arquivo(dados: list) -> None:
+def escrever_no_arquivo(dados: list) -> str:
     cabecalho = ['Pontuação máxima', 'Geração']
-    if os.path.isfile('data/dados.csv'):
-        with open('data/dados.csv', 'r', encoding='UTF8', newline='') as fl:
+    data = datetime.date.today()
+    hora = datetime.datetime.now().hour
+    min = datetime.datetime.now().minute
+    sec = datetime.datetime.now().second
+    sufixo = f"{data}_{hora}_{min}_{sec}"
+    caminho_dos_dados = f"data/dados_{sufixo}.csv"
+    if os.path.isfile(caminho_dos_dados):
+        with open(caminho_dos_dados, 'r', encoding='UTF8', newline='') as fl:
             reader = csv.DictReader(fl)
-            with open('data/dados.csv', 'a', encoding='UTF8', newline='') as f:
+            with open(caminho_dos_dados, 'a', encoding='UTF8', newline='') as f:
                 writer = csv.DictWriter(f, fieldnames=cabecalho)
                 print(f'cabeçalho: {reader.fieldnames}')
                 if reader.fieldnames != cabecalho:
                     writer.writeheader()
                 writer.writerows(dados)
     else:
-        with open('data/dados.csv', 'w', encoding='UTF8', newline='') as f:
+        with open(caminho_dos_dados, 'w', encoding='UTF8', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=cabecalho)
             writer.writeheader()
             writer.writerows(dados)
+
+    return caminho_dos_dados
 
 
 def eval_genomes(genomes, config):
@@ -237,7 +242,11 @@ def eval_genomes(genomes, config):
         global pontos, game_speed
         pontos += 1
         if pontos % 100 == 0:
-            game_speed += 1
+            if game_speed >= 55:
+                if pontos % 250 == 0:
+                    game_speed += 1
+            else:
+                game_speed += 1
         text = FONTE.render(f'Pontos: {str(pontos)}', True, (0, 0, 0))
         TELA.blit(text, (950, 50))
 
@@ -265,10 +274,9 @@ def eval_genomes(genomes, config):
             x_pos_bg = 0
         x_pos_bg -= game_speed
 
+    linha = {}
     run = True
     while run:
-        dados = []
-        linha = {}
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -284,8 +292,7 @@ def eval_genomes(genomes, config):
             geracao = pop.generation
             linha["Pontuação máxima"] = pontos
             linha["Geração"] = geracao
-            dados.append(linha)
-            escrever_no_arquivo(dados)
+            DADOS.append(linha)
             break
 
         if len(obstaculos) == 0:
@@ -296,6 +303,7 @@ def eval_genomes(genomes, config):
                 obstaculos.append(GrdCacto(CACTO_GRD, random.randint(0, 2), (6, 165, 54)))
             elif rand_int == 2:
                 obstaculos.append(Ptero(random.randint(0, 150)))
+                # obstaculos.append(Ptero(0))
 
         for obstaculo in obstaculos:
             obstaculo.draw(TELA)
@@ -310,15 +318,14 @@ def eval_genomes(genomes, config):
                     ge[i].fitness = pontos
 
         # user_input = pygame.key.get_pressed()
+        # angulo((dino.rect.y - obstaculo.rect.y),distancia((dino.rect.x, dino.rect.y), obstaculo.rect.midtop))
 
         for i, dino in enumerate(dinos):
             output = nets[i].activate((dino.rect.y - obstaculo.rect.y,
                                        dino.rect.x - obstaculo.rect.x,
-                                       distancia((dino.rect.x, dino.rect.y),
-                                                 obstaculo.rect.midtop),
-                                       angulo((dino.rect.y - obstaculo.rect.y),
-                                              distancia((dino.rect.x, dino.rect.y), obstaculo.rect.midtop)),
-                                       game_speed))
+                                       distancia((dino.rect.x, dino.rect.y), obstaculo.rect.midtop),
+                                       obstaculo.rect.y - 110,
+                                       distancia((dino.rect.x, dino.rect.y), obstaculo.rect.midtop) - game_speed))
             # print(output[0])
             if output[0] > 0.0 and dino.rect.y == dino.Y_POS:
                 dino.dino_pula = True
@@ -333,9 +340,7 @@ def eval_genomes(genomes, config):
         background()
         clock.tick(30)
         pygame.display.update()
-
-
-# END main loop
+    # END main loop
 
 
 # Setup the NEAT
@@ -352,11 +357,21 @@ def run(config_path):
     stats = neat.StatisticsReporter()
     pop.add_reporter(stats)
     pop.add_reporter(neat.StdOutReporter(True))
-    pop.run(eval_genomes, 100)
+    pop.run(eval_genomes, 5000)
     print(f'Pontuação máxima: {define_max_score(pontos, pop.generation)}')
+    escrever_no_arquivo(DADOS)
 
 
 if __name__ == "__main__":
-    local_dir = os.path.dirname(__file__)
-    config_path = os.path.join(local_dir, 'config.txt')
-    run(config_path)
+    try:
+        local_dir = os.path.dirname(__file__)
+        config_path = os.path.join(local_dir, 'config.txt')
+        run(config_path)
+    except SystemExit as ext:
+        if ext.code:
+            pass
+        else:
+            pass
+    finally:
+        caminhos_dos_dados = escrever_no_arquivo(DADOS)
+        GeradorDeGraficos.gerar_grafico_linha_sns(caminhos_dos_dados)
