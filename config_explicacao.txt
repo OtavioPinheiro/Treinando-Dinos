@@ -1,0 +1,102 @@
+[NEAT]
+fitness_criterion     = max   # A função usada para calcular o critério de terminação do conjunto de fitness do genoma.
+                              # Os valores permitidos são: min, max e mean
+
+fitness_threshold     = 10000 # Quando a aptidão calculada por fitness_criterionatingir ou exceder esse limite,
+                              # o processo de evolução será encerrado, com uma chamada para qualquer
+                              # found_solutionmétodo de classe de relatório registrado.
+
+pop_size              = 100   # O número de indivíduos em cada geração.
+
+reset_on_extinction   = False # Se isso resultar em True, quando todas as espécies forem extintas simultaneamente
+                              # devido à estagnação, uma nova população aleatória será criada. Se False, a
+                              # CompleteExtinctionExceptionserá lançado.
+
+[DefaultGenome]
+# node activation options
+activation_default      = relu # https://neat-python.readthedocs.io/en/latest/activation.html
+activation_mutate_rate  = 0.0
+activation_options      = relu
+
+# node aggregation options
+aggregation_default     = sum
+aggregation_mutate_rate = 0.0
+aggregation_options     = sum
+
+# node bias options
+bias_init_mean          = 0.0
+bias_init_stdev         = 1.0
+bias_max_value          = 30.0
+bias_min_value          = -30.0
+bias_mutate_power       = 0.5
+bias_mutate_rate        = 0.7
+bias_replace_rate       = 0.1
+
+# genome compatibility options
+compatibility_disjoint_coefficient = 1.0
+compatibility_weight_coefficient   = 0.5
+
+# connection add/remove rates
+conn_add_prob           = 0.5
+conn_delete_prob        = 0.5
+
+# connection enable options
+enabled_default         = True
+enabled_mutate_rate     = 0.01
+
+feed_forward            = True
+initial_connection      = full
+
+# node add/remove rates
+node_add_prob           = 0.2
+node_delete_prob        = 0.2
+
+# network parameters
+num_hidden              = 0
+num_inputs              = 5
+num_outputs             = 1
+
+# node response options
+response_init_mean      = 1.0
+response_init_stdev     = 0.0
+response_max_value      = 30.0
+response_min_value      = -30.0
+response_mutate_power   = 0.0
+response_mutate_rate    = 0.0
+response_replace_rate   = 0.0
+
+# connection weight options
+weight_init_mean        = 0.0
+weight_init_stdev       = 1.0
+weight_max_value        = 30
+weight_min_value        = -30
+weight_mutate_power     = 0.5
+weight_mutate_rate      = 0.8
+weight_replace_rate     = 0.1
+
+[DefaultSpeciesSet]
+compatibility_threshold = 3.0 # Indivíduos cuja distância genômica é menor que este limite são considerados da mesma
+                              # espécie.
+
+[DefaultStagnation]
+species_fitness_func = max # A função usada para calcular a aptidão das espécies. Valor padrão é ``mean``. Os valores
+                           # permitidos são: max, min, meane median
+
+max_stagnation       = 50 # As espécies que não apresentarem melhora em mais do que esse número de gerações serão
+                          # consideradas estagnadas e removidas. Valor padrão é 15.
+
+species_elitism      = 5 # O número de espécies que serão protegidas da estagnação; principalmente destinado a evitar
+                         # extinções totais causadas por todas as espécies que ficam estagnadas antes que novas
+                         # espécies surjam. Por exemplo, uma species_elitismconfiguração de 3 impedirá que as 3
+                         # espécies com maior aptidão de espécie sejam removidas por estagnação, independentemente da
+                         # quantidade de tempo em que não mostraram melhora. Valor padrão é 0.
+
+[DefaultReproduction]
+elitism             = 30 # O número de indivíduos mais aptos em cada espécie que serão preservados como estão de uma
+                         # geração para a próxima. Valor padrão é 0.
+
+survival_threshold  = 0.3 # A fração para cada espécie permitiu reproduzir cada geração. Este padrão é 0,2.
+
+min_species_size    = 5 # O número mínimo de genomas por espécie após a reprodução. Este padrão é 2.
+
+# Documentação: https://neat-python.readthedocs.io/en/latest/config_file.html
